@@ -1,0 +1,16 @@
+{
+  "name": "we-plugin-db-system-settings",
+  "description": "We.js plugin to add support for set system settings in database",
+  "version": "1.0.0",
+  "main": "plugin.js",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "Alberto Souza <contato@albertosouza.net>",
+  "license": "MIT",
+  "repository": "wejs/we-plugin-db-system-settings",
+  "keywords": [
+    "wejs-plugin"
+  ],
+  "wejs": {}
+}
