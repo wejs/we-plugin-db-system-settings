@@ -94,8 +94,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
   });
 
   plugin.hooks.on('we:server:after:start', (we, done)=> {
-    // your code here ...
-    done();
+    plugin.watchConfigFile(done);
   });
 
   plugin.reloadCachedSettings = function reloadCachedSettings(done) {
@@ -120,19 +119,15 @@ module.exports = function loadPlugin(projectPath, Plugin) {
   }
 
   plugin.writeConfigInFile = function writeConfigInFile(cb) {
+    if (!cb) cb = function(){};
+
     fs.writeFile(file, JSON.stringify(plugin.we.systemSettings), {
       flag: 'w'
     }, cb);
   }
 
   plugin.watchConfigFile = function watchConfigFile(done) {
-    fs.watchFile('message.text', (curr, prev) => {
-      console.log(`the current mtime is: ${curr.mtime}`);
-      console.log(`the previous mtime was: ${prev.mtime}`);
-    });
-
     plugin.configWatcher = chokidar.watch(file, {
-      ignored: /[\/\\]\./,
       persistent: true
     });
 
@@ -145,22 +140,18 @@ module.exports = function loadPlugin(projectPath, Plugin) {
 
   plugin.reloadConfigFromFile = function reloadConfigFromFile() {
     const we = plugin.we;
-
-    fs.watchFile('message.text', (curr, prev) => {
-      console.log(`the current mtime is: ${curr.mtime}`);
-      console.log(`the previous mtime was: ${prev.mtime}`);
-    });
-
-    fs.readFile(file, (err, data)=> {
+    fs.readFile(file, 'utf8', (err, data)=> {
       if (err) {
-        we.log.error('we-plugin-user-settings:Error on read config file', err);
+        we.log.error('we-plugin-db-system-settings:Error on read config file', err);
         return;
       }
+
+      if (!data) return;
 
       try {
         we.systemSettings = JSON.parse(data);
       } catch(e) {
-        we.log.error('we-plugin-user-settings:Error on parse config file', e);
+        we.log.error('we-plugin-db-system-settings:Error on parse config file', e);
       }
 
     });
