@@ -83,6 +83,8 @@ module.exports = {
           });
 
           req.we.systemSettings = updatedSettings;
+          // update config sync file:
+          req.we.plugins['we-plugin-db-system-settings'].writeConfigInFile();
         }
 
         res.status(200).send({ settings: updatedSettings });

@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "main": "plugin.js",
   "scripts": {},
-  "dependencies": {},
+  "dependencies": {
+    "chokidar": "^1.7.0"
+  },
   "devDependencies": {},
   "author": "Alberto Souza <contato@albertosouza.net>",
   "license": "MIT",
