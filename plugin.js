@@ -132,13 +132,19 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     });
 
     plugin.configWatcher.on('change', ()=> {
-      plugin.reloadConfigFromFile();
+      setTimeout(()=> {
+        plugin.reloadConfigFromFile();
+      }, 50);
     });
 
     done();
   }
 
+  plugin.trys = 0;
+
   plugin.reloadConfigFromFile = function reloadConfigFromFile() {
+    plugin.trys++;
+
     const we = plugin.we;
     fs.readFile(file, 'utf8', (err, data)=> {
       if (err) {
@@ -146,7 +152,16 @@ module.exports = function loadPlugin(projectPath, Plugin) {
         return;
       }
 
-      if (!data) return;
+      if (!data) {
+        // if not get any data then the file are in write process ... try again with some delay:
+        setTimeout(()=> {
+          plugin.reloadConfigFromFile();
+        }, 100);
+
+        return;
+      }
+
+      plugin.trys = 0;
 
       try {
         we.systemSettings = JSON.parse(data);
