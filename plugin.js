@@ -19,6 +19,24 @@ module.exports = function loadPlugin(projectPath, Plugin) {
         'title': 'Update all database system settings'
       },
     },
+    publicSystemSettings: {
+      siteName: true,
+      siteFooter: true,
+      siteDaysOfService: true,
+      siteDescription: true,
+      iconId: true,
+      iconUrl: true,
+      iconUrlMedium: true,
+      iconUrlOriginal: true,
+      iconUrlThumbnail: true,
+      logoId: true,
+      logoUrl: true,
+      logoUrlMedium: true,
+      logoUrlOriginal: true,
+      logoUrlThumbnail: true,
+      googleAnalyticsID: true,
+      emailContact: true
+    }
   });
 
   // plugin routes
@@ -76,21 +94,23 @@ module.exports = function loadPlugin(projectPath, Plugin) {
   });
 
   plugin.hooks.on('we-plugin-user-settings:getCurrentUserSettings', (ctx, done)=> {
+    const we = plugin.we,
+      c = we.config;
+
     // ctx = {req: req,res: res,data: data}
-    plugin.we.db.models['system-setting'].findAll()
-    .then( (r)=> {
-      ctx.data.systemSettings = {};
+    ctx.data.systemSettings = {};
 
-      if (r) {
-        r.forEach( (setting)=> {
-          ctx.data.systemSettings[setting.key] = setting.value;
-        });
+    if (we.acl.canStatic('system_settings_find', ctx.req.userRoleNames)) {
+      ctx.data.systemSettings = we.systemSettings;
+    } else {
+      // filter to get only public system settings if user cant get all system settings:
+      for (let name in c.publicSystemSettings) {
+        if (!c.publicSystemSettings[name]) continue;
+        ctx.data.systemSettings[name] = we.systemSettings[name];
       }
+    }
 
-      done();
-      return null;
-    })
-    .catch(done);
+    done();
   });
 
   plugin.hooks.on('we:server:after:start', (we, done)=> {
