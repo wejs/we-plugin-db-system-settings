@@ -2,6 +2,23 @@
 
 Plugin to add support for save settings in database, usefull for dynamic configurations and required for some plugins 
 
+## Hooks and events
+
+### HOOL system-settings:started
+```
+plugin.hooks.on('system-settings:started', function (we, done) {
+  // your code here ...
+  done();
+});
+```
+
+### EVENT system-settings:updated:after
+```
+plugin.events.on('system-settings:updated:after', function (we) {
+  // your code here ...
+});
+```
+
 ## Links
 
 > * We.js site: http://wejs.org

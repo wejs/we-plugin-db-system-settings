@@ -81,11 +81,11 @@ module.exports = function loadPlugin(projectPath, Plugin) {
           we.systemSettings[setting.key] = setting.value;
         });
       }
-      done();
+
+      plugin.hooks.trigger('system-settings:started', we, done);
       return null;
     })
     .catch(done);
-
     return null;
   });
 
@@ -185,6 +185,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
 
       try {
         we.systemSettings = JSON.parse(data);
+        plugin.events.emit('system-settings:updated:after', we);
       } catch(e) {
         we.log.error('we-plugin-db-system-settings:Error on parse config file', e);
       }
