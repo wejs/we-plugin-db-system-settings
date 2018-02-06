@@ -174,7 +174,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
 
       if (!data) {
         // if not get any data then the file are in write process ... try again with some delay:
-        setTimeout(()=> {
+        setTimeout( ()=> {
           plugin.reloadConfigFromFile();
         }, 100);
 
@@ -190,6 +190,59 @@ module.exports = function loadPlugin(projectPath, Plugin) {
         we.log.error('we-plugin-db-system-settings:Error on parse config file', e);
       }
 
+    });
+  }
+
+  plugin.setConfigs = function setConfigs(newCfgs, cb) {
+    const we = plugin.we;
+    const Model = we.db.models['system-setting'];
+
+    we.utils.async.forEachOf(newCfgs, (value, key, next)=> {
+      Model.findOne({
+        where: { key: key }
+      })
+      .then( (r)=> {
+        if (r) {
+          return r.updateAttributes({
+            value: value
+          })
+          .then( ()=> {
+            next();
+            return null;
+          });
+        } else {
+          return Model.create({
+            value: value,
+            key: key
+          })
+          .then( ()=> {
+            next();
+            return null;
+          });
+        }
+      })
+      .catch(next);
+    }, (err)=> {
+      if (err) return cb(err);
+
+      const updatedSettings = {};
+
+      Model.findAll({ raw: true })
+      .then( (r)=> {
+        if (r) {
+          r.forEach( (setting)=> {
+            updatedSettings[setting.key] = setting.value;
+          });
+
+          we.systemSettings = updatedSettings;
+          // update config sync file:
+          we.plugins['we-plugin-db-system-settings'].writeConfigInFile();
+        }
+
+        cb(null, updatedSettings);
+        return null;
+      })
+      .catch(cb);
     });
   }
 

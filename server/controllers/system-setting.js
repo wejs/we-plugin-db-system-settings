@@ -42,55 +42,10 @@ module.exports = {
       return res.forbidden();
     }
 
-    const Model = req.we.db.models['system-setting'];
-
-    req.we.utils.async.forEachOf(req.body, (value, key, next)=> {
-      Model.findOne({
-        where: { key: key }
-      })
-      .then( (r)=> {
-        if (r) {
-          return r.updateAttributes({
-            value: value
-          })
-          .then( ()=> {
-            next();
-            return null;
-          });
-        } else {
-          return Model.create({
-            value: value,
-            key: key
-          })
-          .then( ()=> {
-            next();
-            return null;
-          });
-        }
-
-      })
-      .catch(next);
-    }, (err)=> {
+    req.we.plugins['we-plugin-db-system-settings']
+    .setConfigs(req.body, (err, updatedSettings)=> {
       if (err) return res.queryError(err);
-
-      const updatedSettings = {};
-
-      Model.findAll({ raw: true })
-      .then( (r)=> {
-        if (r) {
-          r.forEach( (setting)=> {
-            updatedSettings[setting.key] = setting.value;
-          });
-
-          req.we.systemSettings = updatedSettings;
-          // update config sync file:
-          req.we.plugins['we-plugin-db-system-settings'].writeConfigInFile();
-        }
-
-        res.status(200).send({ settings: updatedSettings });
-        return null;
-      })
-      .catch(res.queryError);
+      res.status(200).send({ settings: updatedSettings });
     });
   }
 };
