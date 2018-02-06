@@ -70,7 +70,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     done();
   }
 
-  plugin.hooks.on('we:after:routes:bind', (we, done)=> {
+  plugin.hooks.on('we:models:ready', (we, done)=> {
     // preload all system settings salved in db before the bootstrap:
     we.db.models['system-setting'].findAll()
     .then( (r)=> {
@@ -89,7 +89,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     return null;
   });
 
-  plugin.hooks.on('we:after:routes:bind', (we, done)=> {
+  plugin.hooks.on('we:after:load:plugins', (we, done)=> {
     plugin.writeConfigInFile(done);
   });
 
