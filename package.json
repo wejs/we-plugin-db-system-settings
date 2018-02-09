@@ -1,7 +1,7 @@
 {
   "name": "we-plugin-db-system-settings",
   "description": "We.js plugin to add support for set system settings in database",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "plugin.js",
   "scripts": {},
   "dependencies": {
