@@ -9,6 +9,8 @@ module.exports = function loadPlugin(projectPath, Plugin) {
   const plugin = new Plugin(__dirname);
   const file = plugin.we.projectPath+'/files/db-settings-watch-file.txt';
 
+  plugin.we.systemSettings = {};
+
   // plugin configs
   plugin.setConfigs({
     permissions: {
@@ -74,7 +76,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     // preload all system settings salved in db before the bootstrap:
     we.db.models['system-setting'].findAll()
     .then( (r)=> {
-      we.systemSettings = {};
+      if (!we.systemSettings) we.systemSettings = {};
 
       if (r) {
         r.forEach( (setting)=> {
@@ -184,7 +186,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
       plugin.trys = 0;
 
       try {
-        we.systemSettings = JSON.parse(data);
+        we.systemSettings = (JSON.parse(data) || {});
         plugin.events.emit('system-settings:updated:after', we);
       } catch(e) {
         we.log.error('we-plugin-db-system-settings:Error on parse config file', e);
@@ -234,7 +236,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
             updatedSettings[setting.key] = setting.value;
           });
 
-          we.systemSettings = updatedSettings;
+          we.systemSettings = (updatedSettings || {});
           // update config sync file:
           we.plugins['we-plugin-db-system-settings'].writeConfigInFile();
         }
