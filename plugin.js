@@ -143,7 +143,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
   plugin.writeConfigInFile = function writeConfigInFile(cb) {
     if (!cb) cb = function(){};
 
-    fs.writeFile(file, JSON.stringify(plugin.we.systemSettings), {
+    fs.writeFile(file, JSON.stringify(plugin.we.systemSettings || {}), {
       flag: 'w'
     }, cb);
   }
