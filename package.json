@@ -7,7 +7,9 @@
   "dependencies": {
     "chokidar": "^1.7.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "redis": "^2.8.0"
+  },
   "author": "Alberto Souza <contato@albertosouza.net>",
   "license": "MIT",
   "repository": "wejs/we-plugin-db-system-settings",
