@@ -2,17 +2,14 @@
  * We.js DB System Settings plugin
  */
 
-const fs = require('fs'),
-  chokidar = require('chokidar');
-
 module.exports = function loadPlugin(projectPath, Plugin) {
   const plugin = new Plugin(__dirname);
-  const file = plugin.we.projectPath+'/files/db-settings-watch-file.txt';
 
   plugin.we.systemSettings = {};
 
   // plugin configs
   plugin.setConfigs({
+    systemSettingsPubSubStrategy: 'file',
     permissions: {
       'system_settings_find': {
         'title': 'Load all database system settings'
@@ -72,27 +69,19 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     done();
   }
 
+  plugin.hooks.on('we:after:load:plugins', (we, done)=> {
+    const st = we.config.systemSettingsPubSubStrategy;
+
+    if (!st) return done();
+    const Pubsub = require('./lib/pubsub/'+st);
+    plugin.pubsub = new Pubsub(we);
+
+    done();
+  });
+
   plugin.hooks.on('we:models:ready', (we, done)=> {
-    // preload all system settings salved in db before the bootstrap:
-    we.db.models['system-setting'].findAll()
-    .then( (r)=> {
-      if (!we.systemSettings) we.systemSettings = {};
-
-      if (r) {
-        r.forEach( (setting)=> {
-          we.systemSettings[setting.key] = setting.value;
-        });
-      }
-
-      plugin.writeConfigInFile( (err)=> {
-        if (err) return done(err);
-        plugin.hooks.trigger('system-settings:started', we, done);
-      });
-
-      return null;
-    })
-    .catch(done);
-    return null;
+    if (!plugin.pubsub) return done();
+    plugin.pubsub.init(done);
   });
 
   plugin.hooks.on('we-plugin-user-settings:getCurrentUserSettings', (ctx, done)=> {
@@ -115,88 +104,10 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     done();
   });
 
-  plugin.hooks.on('system-settings:started', (we, done)=> {
-    plugin.watchConfigFile(done);
-  });
-
-  plugin.reloadCachedSettings = function reloadCachedSettings(done) {
-    if (!done) done = function(){};
-
-    const we = plugin.we;
-    // preload all system settings salved in db before the bootstrap:
-    we.db.models['system-setting']
-    .findAll()
-    .then( (r)=> {
-      we.systemSettings = {};
-
-      if (r) {
-        r.forEach( (setting)=> {
-          we.systemSettings[setting.key] = setting.value;
-        });
-      }
-      done();
-      return null;
-    })
-    .catch(done);
-  }
-
-  plugin.writeConfigInFile = function writeConfigInFile(cb) {
-    if (!cb) cb = function(){};
-    fs.writeFile(file, JSON.stringify(plugin.we.systemSettings || {}), {
-      flag: 'w'
-    }, cb);
-  }
-
-  plugin.watchConfigFile = function watchConfigFile(done) {
-    plugin.configWatcher = chokidar.watch(file, {
-      persistent: true
-    });
-
-    plugin.configWatcher.on('change', ()=> {
-      setTimeout(()=> {
-        plugin.reloadConfigFromFile();
-      }, 50);
-    });
-
-    done();
-  }
-
-  plugin.trys = 0;
-
-  plugin.reloadConfigFromFile = function reloadConfigFromFile() {
-    plugin.trys++;
-
-    const we = plugin.we;
-    fs.readFile(file, 'utf8', (err, data)=> {
-      if (err) {
-        we.log.error('we-plugin-db-system-settings:Error on read config file', err);
-        return;
-      }
-
-      if (!data) {
-        // if not get any data then the file are in write process ... try again with some delay:
-        setTimeout( ()=> {
-          plugin.reloadConfigFromFile();
-        }, 100);
-
-        return;
-      }
-
-      plugin.trys = 0;
-
-      try {
-        we.systemSettings = (JSON.parse(data) || {});
-        plugin.events.emit('system-settings:updated:after', we);
-      } catch(e) {
-        we.log.error('we-plugin-db-system-settings:Error on parse config file', e);
-      }
-
-    });
-  }
-
   plugin.setConfigs = function setConfigs(newCfgs, cb) {
-    const we = plugin.we;
-    const Model = we.db.models['system-setting'];
+    const we = plugin.we,
+      pubsub = plugin.pubsub,
+      Model = we.db.models['system-setting'];
 
     we.utils.async.forEachOf(newCfgs, (value, key, next)=> {
       Model.findOne({
@@ -225,25 +136,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
       .catch(next);
     }, (err)=> {
       if (err) return cb(err);
-
-      const updatedSettings = {};
-
-      Model.findAll({ raw: true })
-      .then( (r)=> {
-        if (r) {
-          r.forEach( (setting)=> {
-            updatedSettings[setting.key] = setting.value;
-          });
-
-          we.systemSettings = (updatedSettings || {});
-          // update config sync file:
-          we.plugins['we-plugin-db-system-settings'].writeConfigInFile();
-        }
-
-        cb(null, updatedSettings);
-        return null;
-      })
-      .catch(cb);
+      pubsub.publish(cb);
     });
   }
 
