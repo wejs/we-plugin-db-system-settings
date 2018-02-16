@@ -84,15 +84,15 @@ module.exports = function loadPlugin(projectPath, Plugin) {
         });
       }
 
-      plugin.hooks.trigger('system-settings:started', we, done);
+      plugin.writeConfigInFile( (err)=> {
+        if (err) return done(err);
+        plugin.hooks.trigger('system-settings:started', we, done);
+      });
+
       return null;
     })
     .catch(done);
     return null;
-  });
-
-  plugin.hooks.on('we:after:load:plugins', (we, done)=> {
-    plugin.writeConfigInFile(done);
   });
 
   plugin.hooks.on('we-plugin-user-settings:getCurrentUserSettings', (ctx, done)=> {
@@ -115,7 +115,7 @@ module.exports = function loadPlugin(projectPath, Plugin) {
     done();
   });
 
-  plugin.hooks.on('we:server:after:start', (we, done)=> {
+  plugin.hooks.on('system-settings:started', (we, done)=> {
     plugin.watchConfigFile(done);
   });
 
@@ -142,7 +142,6 @@ module.exports = function loadPlugin(projectPath, Plugin) {
 
   plugin.writeConfigInFile = function writeConfigInFile(cb) {
     if (!cb) cb = function(){};
-
     fs.writeFile(file, JSON.stringify(plugin.we.systemSettings || {}), {
       flag: 'w'
     }, cb);
