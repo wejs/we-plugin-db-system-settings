@@ -117,26 +117,26 @@ module.exports = function loadPlugin(projectPath, Plugin) {
         if (r) {
           return r.updateAttributes({
             value: value
-          })
-          .then( ()=> {
-            next();
-            return null;
           });
         } else {
           return Model.create({
             value: value,
             key: key
-          })
-          .then( ()=> {
-            next();
-            return null;
           });
         }
+      })
+      .then( ()=> {
+        we.systemSettings[key] = value; // update runtime setting
+        next();
+        return null;
       })
       .catch(next);
     }, (err)=> {
       if (err) return cb(err);
-      pubsub.publish(cb);
+
+      pubsub.publish( (err)=> {
+        cb(err, we.systemSettings);
+      });
     });
   }
 
