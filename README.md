@@ -1,10 +1,10 @@
 # We.js DB System Settings plugin
 
-Plugin to add support for save settings in database, usefull for dynamic configurations and required for some plugins 
+Plugin to add support for save settings in database, usefull for dynamic configurations and required for some plugins
 
 ## Hooks and events
 
-### HOOL system-settings:started
+### HOOk system-settings:started
 ```
 plugin.hooks.on('system-settings:started', function (we, done) {
   // your code here ...
